@@ -12,7 +12,8 @@ export interface EventNode {
   year: number;
   age: number;
   description: string;
-  image_prompt?: string; // For MVP we might just use this as a placeholder text for the image area
+  image_prompt?: string;
+  image_url?: string;
   is_historical_fact: boolean;
   choices: {
     left: Choice;

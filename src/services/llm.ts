@@ -1,49 +1,63 @@
 import { EventNode } from '../types';
 
 const SYSTEM_PROMPT = `
-你是一个互动式小说引擎 "Reading Steiner"。
-你的任务是根据当前剧情节点和用户的选择，生成下一个剧情节点。
-请严格遵循以下 JSON 格式输出，不要包含任何 Markdown 代码块标记。
+You are the intelligent continuation engine for "Donald Trump & The Ambition of American Power Timeline".
+Your core task is to deduce the future development of this branch based on user choices and generate new future branch nodes.
+
+Please strictly follow the JSON format below for output, and do not include Markdown code block tags (like \`\`\`json).
 
 Output JSON Schema:
 {
   "node_id": "uuid string",
-  "parent_id": "string (parent node id)",
-  "timeline_id": "string (alpha/beta/etc)",
+  "parent_id": "string",
+  "timeline_id": "string",
   "year": number,
   "age": number,
-  "description": "string (story description)",
-  "image_prompt": "string (for stable diffusion)",
+  "description": "string",
+  "image_prompt": "string",
   "is_historical_fact": boolean,
   "choices": {
     "left": {
-      "text": "string (choice text)",
-      "consequence_type": "divergence" | "convergence",
-      "next_node_id": "string (uuid of NEXT potential node, but for dynamic generation just use placeholder or null)",
-      "next_node_preview": "string (preview text)"
+      "text": "string (within 15 words)",
+      "consequence_type": "divergence",
+      "next_node_id": "null",
+      "next_node_preview": "string"
     },
     "right": {
-      "text": "string (choice text)",
-      "consequence_type": "divergence" | "convergence",
-      "next_node_id": "string",
+      "text": "string (within 15 words)",
+      "consequence_type": "divergence",
+      "next_node_id": "null",
       "next_node_preview": "string"
     }
   },
   "status_effect": {
-    "wealth": number (delta),
-    "popularity": number (delta),
-    "health": number (delta),
-    "sanity": number (delta)
+    "wealth": number,
+    "popularity": number,
+    "health": number,
+    "sanity": number
   }
 }
 
 Rules:
-1. 年份和年龄应根据剧情自然推进（通常 +1 到 +5 年）。
-2. "timeline_id" 如果发生重大偏离史实，应改变（如 alpha -> beta）。
-3. 保持 "Donald Trump" 的性格特征。
-4. 生成内容需包含 "left" 和 "right" 两个后续选项。
-5. "description" 必须控制在 80 字以内，语言精练，具有强烈的戏剧冲突和画面感。
-6. 尽量推动剧情发生重大转折，制造意想不到的后果（蝴蝶效应）。
+1. **Butterfly Effect Amplifier**:
+   - The \`year\` and \`age\` of the current node must increase by 5-10 years or more compared to the previous node.
+   - The plot must reflect irreversible drastic changes caused by the time span.
+
+2. **Immersive Narrative** (description):
+   - Use the cold, detached tone of a historical documentary.
+   - Emphasize specific years, casualty numbers, specific act names, geopolitical shifts, or details of social unrest.
+   - Control the word count between 50-80 words.
+
+3. **Extreme Binary Opposition** (for generating \`choices\` field):
+   - The **Swipe Left (left)** option must represent: Radical change, war, dictatorship, high-risk gambling, or complete destruction.
+   - The **Swipe Right (right)** option must represent: Conservative compromise, economic collapse, passive defense, internal coup, or slow decay.
+   - Option text (\`text\`) must be concise (within 15 words).
+
+4. **Dynamic Finale**:
+   - When the plot develops to nuclear war, national disintegration, the complete death of the protagonist, or the end of history, mark it as the ending.
+   - Ending handling: Set \`choices.left.next_node_id\` and \`choices.right.next_node_id\` to \`null\`, and provide the final verdict in \`description\`.
+
+5. **Timeline ID**: If the plot deviates significantly from the original historical trajectory, update the \`timeline_id\` (e.g., alpha -> beta).
 `;
 
 export async function generateNextNode(
@@ -110,4 +124,35 @@ export async function generateNextNode(
     console.error('Failed to generate next node:', error);
     throw error;
   }
+}
+
+export async function generateImage(apiKey: string, prompt: string): Promise<string> {
+    try {
+        const response = await fetch('https://api.openai.com/v1/images/generations', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: 'dall-e-3',
+                prompt: `Political Illustration, dark moody style, historical archive footage feel, featuring Donald Trump as the protagonist: ${prompt}`,
+                n: 1,
+                size: "1024x1024",
+                quality: "standard"
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Image Generation API Error:', errorData);
+            throw new Error(`Image API Error: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.data[0].url;
+    } catch (error) {
+        console.error('Failed to generate image:', error);
+        throw error;
+    }
 }

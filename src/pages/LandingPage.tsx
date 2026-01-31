@@ -16,7 +16,7 @@ export const LandingPage = () => {
     if (searchTerm.trim().toLowerCase().includes('trump') || searchTerm.trim() === '') {
       setShowApiKeyModal(true);
     } else {
-        alert('目前MVP版本仅支持“Donald Trump”');
+        alert('MVP version only supports "Donald Trump"');
     }
   };
 
@@ -42,7 +42,7 @@ export const LandingPage = () => {
             Reading Steiner
             </h1>
             <p className="mt-2 text-slate-400 text-sm tracking-widest uppercase">
-            命运探知系统 v0.1
+            Fate Detection System v0.1
             </p>
         </motion.div>
 

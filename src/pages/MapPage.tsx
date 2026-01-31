@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import cytoscape, { ElementDefinition } from 'cytoscape';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Home } from 'lucide-react';
 import { useGame } from '../context/GameContext';
 
 export const MapPage = () => {
@@ -102,10 +102,8 @@ export const MapPage = () => {
         const node = nodes[nodeId];
         
         if (node) {
-            if (confirm(`Time Leap to ${node.year}?`)) {
-                jumpToNode(nodeId);
-                navigate('/game');
-            }
+            jumpToNode(nodeId);
+            navigate('/game');
         }
     });
 
@@ -124,7 +122,14 @@ export const MapPage = () => {
         <ArrowLeft size={24} />
       </button>
 
-      <div className="absolute top-4 right-4 z-10 pointer-events-none">
+      <button 
+        onClick={() => navigate('/')} 
+        className="absolute top-4 right-4 z-10 bg-black/50 backdrop-blur p-2 rounded-full text-white hover:bg-black/70 transition-colors border border-slate-700"
+      >
+        <Home size={24} />
+      </button>
+
+      <div className="absolute bottom-4 right-4 z-10 pointer-events-none">
           <h2 className="text-white/50 font-mono text-sm tracking-widest uppercase">Worldline Visualizer</h2>
       </div>
 

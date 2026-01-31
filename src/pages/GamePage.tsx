@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { motion, useMotionValue, useTransform, useAnimation, PanInfo } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Map, RefreshCw } from 'lucide-react';
+import { Map, RefreshCw, Home } from 'lucide-react';
 import { Typewriter } from '../components/Typewriter';
 
 export const GamePage = () => {
-  const { currentNode, makeChoice, resetGame, isGenerating } = useGame();
+  const { currentNode, makeChoice, resetGame, isGenerating, generateImageForNode } = useGame();
   const navigate = useNavigate();
   const controls = useAnimation();
   const x = useMotionValue(0);
@@ -24,8 +24,15 @@ export const GamePage = () => {
     setShowTypewriter(false);
     // Small delay to reset typewriter
     const timer = setTimeout(() => setShowTypewriter(true), 50);
+
+    // Trigger image generation if needed
+    if (currentNode && !currentNode.image_url && !isGenerating) {
+        // We trigger it even if image_prompt is missing, as fallback to description is handled in context
+        generateImageForNode(currentNode.node_id);
+    }
+
     return () => clearTimeout(timer);
-  }, [currentNode, x]);
+  }, [currentNode, x, isGenerating, generateImageForNode]);
 
   const handleDragEnd = async (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const threshold = 100;
@@ -64,9 +71,14 @@ export const GamePage = () => {
       {/* Top Bar */}
       <div className="h-16 flex justify-between items-center px-6 bg-black/40 backdrop-blur z-20">
         <div className="font-mono text-xl text-blue-400 font-bold">{currentNode.year}</div>
-        <button onClick={() => navigate('/map')} className="p-2 bg-slate-800 rounded-full hover:bg-slate-700 transition-colors">
-            <Map size={20} className="text-white" />
-        </button>
+        <div className="flex gap-4">
+            <button onClick={() => navigate('/')} className="p-2 bg-slate-800 rounded-full hover:bg-slate-700 transition-colors">
+                <Home size={20} className="text-white" />
+            </button>
+            <button onClick={() => navigate('/map')} className="p-2 bg-slate-800 rounded-full hover:bg-slate-700 transition-colors">
+                <Map size={20} className="text-white" />
+            </button>
+        </div>
       </div>
 
       {/* Card Area */}
@@ -83,9 +95,23 @@ export const GamePage = () => {
             {/* Image Placeholder */}
             <div className="h-2/3 bg-slate-900 flex items-center justify-center relative overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent z-10" />
-                <span className="text-slate-600 text-center px-8 z-0">
-                    [Image: {currentNode.image_prompt || currentNode.description}]
-                </span>
+                
+                {currentNode.image_url ? (
+                     <img 
+                        src={currentNode.image_url} 
+                        alt={currentNode.image_prompt} 
+                        className="absolute inset-0 w-full h-full object-cover"
+                     />
+                ) : (
+                    <div className="flex flex-col items-center justify-center p-8 text-center">
+                         {!isGenerating && (
+                             <div className="mb-4 animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                         )}
+                         <span className="text-slate-600 z-0 text-sm">
+                            {isGenerating ? "Computing Worldline..." : `[Image Prompt: ${currentNode.image_prompt || currentNode.description}]`}
+                        </span>
+                    </div>
+                )}
                 
                 {/* Historical Tag */}
                 {currentNode.is_historical_fact && (
@@ -110,7 +136,7 @@ export const GamePage = () => {
                 {isEnding && (
                     <div className="flex gap-2">
                         <button onClick={() => resetGame()} className="w-full bg-blue-600 py-3 rounded-lg text-white font-bold">
-                            从头开始
+                            Restart
                         </button>
                     </div>
                 )}

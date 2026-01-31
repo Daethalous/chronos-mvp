@@ -1,37 +1,86 @@
-# Reading Steiner (命运探知) MVP
+# Reading Steiner (Fate Detection System)
 
-## 项目概述
-本项目是“Reading Steiner”网页应用的 MVP 版本，演示了基于大语言模型（模拟）的人生世界线观测与模拟系统。
+Reading Steiner is an interactive storytelling engine that allows users to explore divergent historical timelines through a card-swiping interface. Powered by Large Language Models (LLM) and Generative AI, it simulates the "Butterfly Effect," where small choices lead to vastly different futures.
 
-## 功能特性
-1.  **Landing Page**: 极简科幻风格入口。
-2.  **Mock Data Engine**: 内置唐纳德·特朗普的 1980-2024 关键事件树（包含史实与虚构分支）。
-3.  **Gameplay**: 类似 Reigns 的卡牌滑动决策机制。
-4.  **Worldline Map**: 使用 Cytoscape 可视化展示当前的世界线路径。
+The current MVP focuses on the timeline of **Donald Trump**, exploring paths of ambition, power, and alternative history.
 
-## 技术栈
-- React
-- TypeScript
-- Tailwind CSS
-- Framer Motion (动画)
-- Cytoscape.js (图表)
-- React Router (路由)
+## ✨ Features
 
-## 运行方式
+- **Immersive Storytelling**: Experience historical and fictional events with vivid descriptions and typewriter text effects.
+- **AIGC Powered**:
+  - **Dynamic Narratives**: Uses OpenAI `gpt-4o-mini` to generate unique story branches in real-time based on your choices.
+  - **Generative Art**: Uses DALL-E 3 to create moody, historical-style illustrations for every new scenario.
+- **Card Swiping Interface**: Intuitive Tinder-style mechanics—swipe **Left** for radical change/risk, **Right** for conservatism/safety.
+- **Worldline Visualization**: An interactive map (using Cytoscape.js) to view your journey through the multiverse and "time travel" back to previous nodes.
+- **Butterfly Effect Engine**: Logic that enforces significant time jumps (5-10+ years) to showcase long-term consequences of decisions.
+- **Fully Localized**: English UI and content.
 
-1. 安装依赖:
-   ```bash
-   yarn install
-   ```
+## 🛠 Tech Stack
 
-2. 启动开发服务器:
-   ```bash
-   yarn dev
-   ```
+- **Frontend**: React, TypeScript, Vite
+- **Styling**: Tailwind CSS
+- **Animations**: Framer Motion
+- **Visualization**: Cytoscape.js
+- **Routing**: React Router
+- **AI Integration**: OpenAI API (GPT-4o-mini, DALL-E 3)
 
-3. 打开浏览器访问 `http://localhost:5173`
+## 🚀 Getting Started
 
-## 交互说明
-- 在首页输入框输入 "Donald Trump" (或直接点击 Go) 开始。
-- 在游戏界面，**左滑**或**右滑**卡片进行选择。
-- 点击右上角**地图图标**查看当前世界线进度。
+### Prerequisites
+
+- Node.js (v16+)
+- Yarn or npm
+- An OpenAI API Key (required for dynamic story and image generation)
+
+### Installation
+
+1.  **Clone the repository** (if applicable) or navigate to the project directory:
+    ```bash
+    cd chronos-mvp
+    ```
+
+2.  **Install dependencies**:
+    ```bash
+    yarn install
+    ```
+
+3.  **Start the development server**:
+    ```bash
+    yarn dev
+    ```
+
+4.  **Open the application**:
+    Visit `http://localhost:5173` in your browser.
+
+## 🎮 How to Play
+
+1.  **Landing Page**: Enter a subject (currently optimized for "Donald Trump") or just click "OBSERVE".
+2.  **Configuration**:
+    - Enter your **OpenAI API Key** to enable dynamic story and image generation.
+    - *Note: You can skip this step to play through the pre-defined static demo scenario.*
+3.  **Gameplay**:
+    - Read the current scenario and swipe the card:
+        - **Left**: Radical/Aggressive choice.
+        - **Right**: Conservative/Passive choice.
+    - Watch as the AI generates the consequences of your actions.
+4.  **Navigation**:
+    - Click the **Map** icon to view the timeline tree.
+    - Click on any visited node in the map to "Time Leap" back to that point.
+    - Click the **Home** icon to return to the main menu.
+
+## 📂 Project Structure
+
+- `src/context/GameContext.tsx`: Core game logic, state management, and AI integration.
+- `src/services/llm.ts`: OpenAI API service functions and system prompts.
+- `src/pages/GamePage.tsx`: Main gameplay interface with card interactions.
+- `src/pages/MapPage.tsx`: Timeline visualization.
+- `src/data/mockData.ts`: Static fallback data for offline mode.
+
+## ⚠️ Notes
+
+- The MVP version is currently optimized for the "Donald Trump" character preset.
+- Image generation may take a few seconds; a loading indicator is provided.
+- Ensure your API key has sufficient credits for GPT-4o-mini and DALL-E 3 usage.
+
+---
+*El Psy Kongroo.*

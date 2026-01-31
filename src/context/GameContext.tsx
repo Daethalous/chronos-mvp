@@ -1,7 +1,7 @@
-import { createContext, useContext, useState, useRef, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useRef, useEffect, useCallback, ReactNode } from 'react';
 import { GameState, EventNode } from '../types';
 import { INITIAL_STATS, MOCK_NODES } from '../data/mockData';
-import { generateNextNode } from '../services/llm';
+import { generateNextNode, generateImage } from '../services/llm';
 
 interface GameContextType {
   gameState: GameState;
@@ -13,17 +13,25 @@ interface GameContextType {
   apiKey: string;
   setApiKey: (key: string) => void;
   isGenerating: boolean;
+  generateImageForNode: (nodeId: string) => Promise<void>;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
 export const GameProvider = ({ children }: { children: ReactNode }) => {
   const [apiKey, setApiKey] = useState('');
-  const [nodes, setNodes] = useState<Record<string, EventNode>>(MOCK_NODES);
+  
+  // Start with only the root node from MOCK_NODES
+  const [nodes, setNodes] = useState<Record<string, EventNode>>({
+      'root': MOCK_NODES['root']
+  });
+  
   const [isGenerating, setIsGenerating] = useState(false);
   
   // Cache for pre-fetched nodes: Key = "currentNodeId-direction"
   const prefetchCache = useRef<Record<string, Promise<EventNode>>>({});
+  // Track pending image generations to avoid duplicates
+  const pendingImageGenerations = useRef<Set<string>>(new Set());
   
   const [gameState, setGameState] = useState<GameState>({
     currentNodeId: 'root',
@@ -32,6 +40,38 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const currentNode = nodes[gameState.currentNodeId];
+
+  const generateImageForNode = useCallback(async (nodeId: string) => {
+    // Access nodes from ref or state? State is fine as long as we handle dependencies.
+    // However, since we need latest 'nodes' to check 'image_url', we should be careful.
+    // Actually, passing nodeId is enough if we use functional state update or check current nodes.
+    // But inside useCallback, 'nodes' might be stale if not in dependency.
+    // If we put 'nodes' in dependency, this function changes on every node update.
+    // That is acceptable if we have the pending check.
+    
+    const node = nodes[nodeId];
+    const prompt = node?.image_prompt || node?.description;
+
+    if (!node || !apiKey || node.image_url || !prompt || pendingImageGenerations.current.has(nodeId)) return;
+
+    try {
+        pendingImageGenerations.current.add(nodeId);
+        console.log(`Generating image for node ${nodeId}...`);
+        const imageUrl = await generateImage(apiKey, prompt);
+        
+        setNodes(prev => ({
+            ...prev,
+            [nodeId]: {
+                ...prev[nodeId],
+                image_url: imageUrl
+            }
+        }));
+    } catch (error) {
+        console.error(`Failed to generate image for node ${nodeId}`, error);
+    } finally {
+        pendingImageGenerations.current.delete(nodeId);
+    }
+  }, [nodes, apiKey]);
 
   // Prefetching Effect
   useEffect(() => {
@@ -124,7 +164,18 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const nextNode = nodes[choice.next_node_id];
+    let nextNode = nodes[choice.next_node_id];
+    
+    // Fallback to MOCK_NODES if not in current state (Lazy loading mock nodes)
+    if (!nextNode && MOCK_NODES[choice.next_node_id]) {
+        nextNode = MOCK_NODES[choice.next_node_id];
+        // Add to nodes state so it appears on map
+        setNodes(prev => ({
+            ...prev,
+            [nextNode.node_id]: nextNode
+        }));
+    }
+
     if (nextNode) {
         updateGameState(nextNode);
     }
@@ -154,8 +205,10 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       history: [startNodeId],
       stats: INITIAL_STATS,
     });
-    // Optional: Reset nodes to MOCK_NODES if we want to clear generated history
-    // setNodes(MOCK_NODES); 
+    // Reset nodes to only root to clear generated history
+    setNodes({ 'root': MOCK_NODES['root'] }); 
+    // Clear cache
+    prefetchCache.current = {};
   };
 
   const jumpToNode = (nodeId: string) => {
@@ -228,7 +281,8 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         jumpToNode,
         apiKey,
         setApiKey,
-        isGenerating
+        isGenerating,
+        generateImageForNode
     }}>
       {children}
     </GameContext.Provider>
