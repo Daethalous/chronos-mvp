@@ -1,11 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { motion, useMotionValue, useTransform, useAnimation, PanInfo } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Map, RefreshCw } from 'lucide-react';
+import { Typewriter } from '../components/Typewriter';
 
 export const GamePage = () => {
-  const { currentNode, makeChoice, resetGame } = useGame();
+  const { currentNode, makeChoice, resetGame, isGenerating } = useGame();
   const navigate = useNavigate();
   const controls = useAnimation();
   const x = useMotionValue(0);
@@ -14,9 +15,16 @@ export const GamePage = () => {
   const leftIndicatorOpacity = useTransform(x, [-150, -20], [1, 0]);
   const rightIndicatorOpacity = useTransform(x, [20, 150], [0, 1]);
   
-  // Reset card position when node changes
+  // Force Typewriter re-render on node change
+  const [showTypewriter, setShowTypewriter] = useState(false);
+  
+  // Reset card position and trigger typewriter when node changes
   useEffect(() => {
     x.set(0);
+    setShowTypewriter(false);
+    // Small delay to reset typewriter
+    const timer = setTimeout(() => setShowTypewriter(true), 50);
+    return () => clearTimeout(timer);
   }, [currentNode, x]);
 
   const handleDragEnd = async (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
@@ -24,12 +32,12 @@ export const GamePage = () => {
     if (info.offset.x > threshold) {
       // Swipe Right
       await controls.start({ x: 500, opacity: 0 });
-      makeChoice('right');
+      await makeChoice('right');
       controls.set({ x: 0, opacity: 1 });
     } else if (info.offset.x < -threshold) {
       // Swipe Left
       await controls.start({ x: -500, opacity: 0 });
-      makeChoice('left');
+      await makeChoice('left');
       controls.set({ x: 0, opacity: 1 });
     } else {
       controls.start({ x: 0 });
@@ -65,7 +73,7 @@ export const GamePage = () => {
       <div className="flex-1 flex items-center justify-center relative p-4">
         {/* The Card */}
         <motion.div
-            drag={isEnding ? false : "x"}
+            drag={isEnding || isGenerating ? false : "x"}
             dragConstraints={{ left: 0, right: 0 }}
             style={{ x, rotate, opacity }}
             onDragEnd={handleDragEnd}
@@ -90,7 +98,13 @@ export const GamePage = () => {
             {/* Text Content */}
             <div className="h-1/3 p-6 flex flex-col justify-between relative z-20">
                 <p className="text-lg text-slate-200 leading-relaxed font-serif">
-                    {currentNode.description}
+                    {isGenerating || showTypewriter ? (
+                        <span className={isGenerating ? "text-blue-400 animate-pulse" : ""}>
+                            <Typewriter text={currentNode.description} speed={30} />
+                        </span>
+                    ) : (
+                        currentNode.description
+                    )}
                 </p>
                 
                 {isEnding && (
@@ -101,7 +115,7 @@ export const GamePage = () => {
                     </div>
                 )}
 
-                {!isEnding && (
+                {!isEnding && !isGenerating && (
                      <div className="text-xs text-slate-500 text-center">
                         Swipe Left or Right to Choose
                     </div>

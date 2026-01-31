@@ -1,19 +1,30 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Search } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Key, X } from 'lucide-react';
+import { useGame } from '../context/GameContext';
 
 export const LandingPage = () => {
   const navigate = useNavigate();
+  const { setApiKey } = useGame();
   const [searchTerm, setSearchTerm] = useState('');
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [tempKey, setTempKey] = useState('');
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim().toLowerCase().includes('trump') || searchTerm.trim() === '') {
-      navigate('/loading');
+      setShowApiKeyModal(true);
     } else {
         alert('目前MVP版本仅支持“Donald Trump”');
     }
+  };
+
+  const handleStartGame = (withKey: boolean) => {
+      if (withKey && tempKey) {
+          setApiKey(tempKey);
+      }
+      navigate('/loading');
   };
 
   return (
@@ -64,6 +75,63 @@ export const LandingPage = () => {
             <span>Worldline Alpha</span>
         </div>
       </div>
+
+      {/* API Key Modal */}
+      <AnimatePresence>
+        {showApiKeyModal && (
+            <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            >
+                <motion.div 
+                    initial={{ scale: 0.9, y: 20 }}
+                    animate={{ scale: 1, y: 0 }}
+                    exit={{ scale: 0.9, y: 20 }}
+                    className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl"
+                >
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                            <Key className="w-4 h-4 text-blue-400" />
+                            Configuration
+                        </h3>
+                        <button onClick={() => setShowApiKeyModal(false)} className="text-slate-500 hover:text-white">
+                            <X size={20} />
+                        </button>
+                    </div>
+                    
+                    <p className="text-sm text-slate-400 mb-4">
+                        Enable AIGC features to dynamically generate new worldlines. 
+                        Leave empty to use pre-defined scenarios.
+                    </p>
+
+                    <input 
+                        type="password" 
+                        value={tempKey}
+                        onChange={(e) => setTempKey(e.target.value)}
+                        placeholder="sk-..."
+                        className="w-full bg-black/50 border border-slate-700 rounded-lg p-3 text-sm text-white focus:border-blue-500 focus:outline-none mb-4 font-mono"
+                    />
+
+                    <div className="flex gap-3">
+                        <button 
+                            onClick={() => handleStartGame(false)}
+                            className="flex-1 py-2 text-sm text-slate-400 hover:text-white transition-colors"
+                        >
+                            Skip
+                        </button>
+                        <button 
+                            onClick={() => handleStartGame(true)}
+                            className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold transition-colors"
+                        >
+                            Confirm
+                        </button>
+                    </div>
+                </motion.div>
+            </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

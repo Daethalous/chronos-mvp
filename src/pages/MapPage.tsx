@@ -3,11 +3,10 @@ import cytoscape, { ElementDefinition } from 'cytoscape';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useGame } from '../context/GameContext';
-import { MOCK_NODES } from '../data/mockData';
 
 export const MapPage = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { gameState } = useGame();
+  const { gameState, nodes, jumpToNode } = useGame();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -16,7 +15,8 @@ export const MapPage = () => {
     // Transform Mock Data to Cytoscape Elements
     const elements: ElementDefinition[] = [];
     
-    Object.values(MOCK_NODES).forEach(node => {
+    // Use nodes from context (includes dynamically generated ones)
+    Object.values(nodes).forEach(node => {
         // Node
         const isVisited = gameState.history.includes(node.node_id);
         const isCurrent = gameState.currentNodeId === node.node_id;
@@ -96,11 +96,24 @@ export const MapPage = () => {
       }
     });
 
+    // Interaction
+    cy.on('tap', 'node', (evt) => {
+        const nodeId = evt.target.id();
+        const node = nodes[nodeId];
+        
+        if (node) {
+            if (confirm(`Time Leap to ${node.year}?`)) {
+                jumpToNode(nodeId);
+                navigate('/game');
+            }
+        }
+    });
+
     // Cleanup
     return () => {
       cy.destroy();
     };
-  }, [gameState]);
+  }, [gameState, nodes, jumpToNode, navigate]);
 
   return (
     <div className="h-screen w-full bg-slate-900 relative">
