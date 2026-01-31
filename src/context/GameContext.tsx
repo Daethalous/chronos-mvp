@@ -7,6 +7,7 @@ interface GameContextType {
   currentNode: EventNode;
   makeChoice: (direction: 'left' | 'right') => void;
   resetGame: (startNodeId?: string) => void;
+  timeTravel: (targetNodeId: string) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -55,8 +56,27 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const timeTravel = (targetNodeId: string) => {
+    // Reconstruct history from root to targetNodeId
+    const newHistory: string[] = [];
+    let currentId: string | null = targetNodeId;
+    
+    while (currentId) {
+        newHistory.unshift(currentId);
+        currentId = MOCK_NODES[currentId].parent_id;
+    }
+
+    // For MVP, we reset stats to initial because recalculating them requires traversing all nodes
+    // In a real app, we would recalculate stats based on the new path
+    setGameState({
+        currentNodeId: targetNodeId,
+        history: newHistory,
+        stats: INITIAL_STATS 
+    });
+  };
+
   return (
-    <GameContext.Provider value={{ gameState, currentNode, makeChoice, resetGame }}>
+    <GameContext.Provider value={{ gameState, currentNode, makeChoice, resetGame, timeTravel }}>
       {children}
     </GameContext.Provider>
   );
