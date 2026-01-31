@@ -1,23 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useGame } from '../context/GameContext';
-import { StatusHud } from '../components/StatusHud';
 import { motion, useMotionValue, useTransform, useAnimation, PanInfo } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Map, RefreshCw } from 'lucide-react';
 
 export const GamePage = () => {
-  const { gameState, currentNode, makeChoice, resetGame } = useGame();
+  const { currentNode, makeChoice, resetGame } = useGame();
   const navigate = useNavigate();
   const controls = useAnimation();
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-10, 10]);
+  const opacity = useTransform(x, [-200, 0, 200], [0.3, 1, 0.3]);
+  const leftIndicatorOpacity = useTransform(x, [-150, -20], [1, 0]);
+  const rightIndicatorOpacity = useTransform(x, [20, 150], [0, 1]);
   
-  const [swipeFeedback, setSwipeFeedback] = useState<'none' | 'left' | 'right'>('none');
-
   // Reset card position when node changes
   useEffect(() => {
     x.set(0);
-    setSwipeFeedback('none');
   }, [currentNode, x]);
 
   const handleDragEnd = async (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
@@ -37,11 +36,6 @@ export const GamePage = () => {
     }
   };
 
-  const handleDrag = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-      if (info.offset.x > 50) setSwipeFeedback('right');
-      else if (info.offset.x < -50) setSwipeFeedback('left');
-      else setSwipeFeedback('none');
-  }
 
   // Check for End Game
   if (!currentNode) {
@@ -69,27 +63,12 @@ export const GamePage = () => {
 
       {/* Card Area */}
       <div className="flex-1 flex items-center justify-center relative p-4">
-        {/* Choice Indicators (Background) */}
-        <div className="absolute inset-0 flex pointer-events-none">
-            <div className={`w-1/2 h-full flex items-center justify-center transition-opacity duration-300 ${swipeFeedback === 'left' ? 'opacity-100' : 'opacity-0'}`}>
-                <div className="text-4xl font-bold text-red-500 border-4 border-red-500 p-4 rounded -rotate-12 bg-black/50 backdrop-blur">
-                    {currentNode.choices.left.text}
-                </div>
-            </div>
-            <div className={`w-1/2 h-full flex items-center justify-center transition-opacity duration-300 ${swipeFeedback === 'right' ? 'opacity-100' : 'opacity-0'}`}>
-                <div className="text-4xl font-bold text-green-500 border-4 border-green-500 p-4 rounded rotate-12 bg-black/50 backdrop-blur">
-                    {currentNode.choices.right.text}
-                </div>
-            </div>
-        </div>
-
         {/* The Card */}
         <motion.div
             drag={isEnding ? false : "x"}
             dragConstraints={{ left: 0, right: 0 }}
-            style={{ x, rotate }}
+            style={{ x, rotate, opacity }}
             onDragEnd={handleDragEnd}
-            onDrag={handleDrag}
             animate={controls}
             className="w-full max-w-sm aspect-[3/4] bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 overflow-hidden relative flex flex-col cursor-grab active:cursor-grabbing"
         >
@@ -129,10 +108,28 @@ export const GamePage = () => {
                 )}
             </div>
         </motion.div>
+
+        {/* Choice Indicators (Overlay) */}
+        <div className="absolute inset-0 flex pointer-events-none z-30">
+            <motion.div 
+                style={{ opacity: leftIndicatorOpacity }}
+                className="w-1/2 h-full flex items-center justify-center"
+            >
+                <div className="text-4xl font-bold text-red-500 border-4 border-red-500 p-4 rounded -rotate-12 bg-black/50 backdrop-blur">
+                    {currentNode.choices.left.text}
+                </div>
+            </motion.div>
+            <motion.div 
+                style={{ opacity: rightIndicatorOpacity }}
+                className="w-1/2 h-full flex items-center justify-center"
+            >
+                <div className="text-4xl font-bold text-green-500 border-4 border-green-500 p-4 rounded rotate-12 bg-black/50 backdrop-blur">
+                    {currentNode.choices.right.text}
+                </div>
+            </motion.div>
+        </div>
       </div>
 
-      {/* Bottom HUD */}
-      <StatusHud stats={gameState.stats} />
     </div>
   );
 };
